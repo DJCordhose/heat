@@ -1,0 +1,103 @@
+<html>
+
+<head>
+    <title>Heatmap</title>
+</head>
+
+<body>
+    <h1>Heatmap</h1>
+    <div id="map"></div>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCg7K8kqCW1ZxamhiJYwaT4hSGZt3fvsU",
+            authDomain: "heat01.firebaseapp.com",
+            projectId: "heat01",
+            storageBucket: "heat01.appspot.com",
+            messagingSenderId: "378247326706",
+            appId: "1:378247326706:web:c3a1fa037a9703fd4ed96b"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        import { getFirestore, collection, getDocs, doc, getDoc, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        const db = getFirestore();
+
+        function el(html) {
+            const template = document.createElement('template');
+            template.innerHTML = html;
+            return template.content.firstChild;
+        }
+
+        function renderConfig(config) {
+            const tasks = config.tasks;
+            const actors = config.actors;
+            // console.log(actors)
+
+            const map = document.getElementById('map');
+            map.addEventListener('click', async function (e) {
+                console.log(e.clientX, e.clientY);
+                // const x = e.offsetX;
+                // const y = e.offsetY;
+                const x = e.clientX;
+                const y = e.clientY;
+                console.log(e.target)
+                const elem = el(`<div style="position: absolute; top: ${y}px; left: ${x}px; background: red; width: 10px; height: 10px;"></div>`);
+                map.appendChild(elem);
+
+                try {
+                    const docRef = await addDoc(collection(db, "pings"), {
+                        actor: "OZ",
+                        task: "ML-A",
+                        timestamp: Date.now()
+                    });
+                    console.log("Document written with ID: ", docRef.id);
+                } catch (e) {
+                    console.error("Error adding document: ", e);
+                }
+
+            });
+
+            for (const actor in actors) {
+                // console.log(actors[actor])
+                // const actorDiv = document.createElement('div')
+                const actorDiv = el(`<div class="actor" id="${actors[actor]}"></div>`);
+                map.append(actorDiv)
+                actorDiv.append(el(`<h2>${actors[actor]}</h2>`));
+                // map.append(`<div class="actor" id="${actors[actor]}"></div>`)
+                for (const task in tasks) {
+                    const taskDiv = document.createElement('div')
+                    actorDiv.append(taskDiv);
+                    // console.log(tasks[task])
+                }
+            }
+            const tasksDiv = el(`<div></div>`);
+            map.append(tasksDiv)
+            for (const task in tasks) {
+                const taskDiv = el(`<div class="task" id="${tasks[task]}"></div>`);
+                taskDiv.append(el(`<h2>${tasks[task]}</h2>`));
+                tasksDiv.append(taskDiv)
+            }
+        }
+
+        const docRef = doc(db, "config", "singleton");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            console.log("Document data:", docSnap.data());
+            renderConfig(docSnap.data());
+        } else {
+            // doc.data() will be undefined in this case
+            console.log("No such document!");
+        }
+    </script>
+
+</body>
+
+</html>

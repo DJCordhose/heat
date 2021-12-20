@@ -2,12 +2,48 @@
 
 <head>
     <title>Heatmap</title>
+    <style>
+        .parent {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            grid-column-gap: 10px;
+            grid-row-gap: 10px;
+        }
+
+        div {
+            /* background-color: #fff;
+            border: 1px solid #f00; */
+            padding: 10px;
+            text-align: center;
+        }
+
+        div.box {
+            /* width: 200px;
+            height: 200px; */
+            border-radius: 100px;
+            background-color: #ccc;
+        }
+
+        .clicked {
+            animation: glow 0.5s ease-in-out;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 10px -10px #aef4af;
+            }
+
+            to {
+                box-shadow: 0 0 10px 10px #aef4af;
+            }
+        }
+    </style>
 </head>
 
 <body>
     <h1>Heatmap</h1>
-    <div id="map"></div>
-
+    <div class="parent" id="map"></div>
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
@@ -42,47 +78,43 @@
 
             const map = document.getElementById('map');
             map.addEventListener('click', async function (e) {
-                console.log(e.clientX, e.clientY);
+                // console.log(e.clientX, e.clientY);
                 // const x = e.offsetX;
                 // const y = e.offsetY;
-                const x = e.clientX;
-                const y = e.clientY;
-                console.log(e.target)
-                const elem = el(`<div style="position: absolute; top: ${y}px; left: ${x}px; background: red; width: 10px; height: 10px;"></div>`);
-                map.appendChild(elem);
+                // const x = e.clientX;
+                // const y = e.clientY;
+                // console.log(e.target)
+                // const elem = el(`<div style="position: absolute; top: ${y}px; left: ${x}px; background: red; width: 10px; height: 10px;"></div>`);
+                // map.appendChild(elem);
 
-                try {
-                    const docRef = await addDoc(collection(db, "pings"), {
-                        actor: "OZ",
-                        task: "ML-A",
-                        timestamp: Date.now()
-                    });
-                    console.log("Document written with ID: ", docRef.id);
-                } catch (e) {
-                    console.error("Error adding document: ", e);
+                const el = e.target;
+                const id = el.id;
+                const [actor, task] = id.split('_');
+                if (task) {
+                    el.classList.add("clicked");
+                    setTimeout(() => {
+                        el.classList.remove("clicked");
+                    }, 1000);
+                    console.log(actor, task)
+                    try {
+                        const docRef = await addDoc(collection(db, "pings"), {
+                            actor,
+                            task,
+                            timestamp: Date.now()
+                        });
+                        console.log("Document written with ID: ", docRef.id);
+                    } catch (e) {
+                        console.error("Error adding document: ", e);
+                    }
                 }
 
             });
 
-            for (const actor in actors) {
-                // console.log(actors[actor])
-                // const actorDiv = document.createElement('div')
-                const actorDiv = el(`<div class="actor" id="${actors[actor]}"></div>`);
-                map.append(actorDiv)
-                actorDiv.append(el(`<h2>${actors[actor]}</h2>`));
-                // map.append(`<div class="actor" id="${actors[actor]}"></div>`)
-                for (const task in tasks) {
-                    const taskDiv = document.createElement('div')
-                    actorDiv.append(taskDiv);
-                    // console.log(tasks[task])
-                }
-            }
-            const tasksDiv = el(`<div></div>`);
-            map.append(tasksDiv)
             for (const task in tasks) {
-                const taskDiv = el(`<div class="task" id="${tasks[task]}"></div>`);
-                taskDiv.append(el(`<h2>${tasks[task]}</h2>`));
-                tasksDiv.append(taskDiv)
+                for (const actor in actors) {
+                    const div = el(`<div class='box' id="${actors[actor]}_${tasks[task]}">${actors[actor]}: ${tasks[task]}</div>`);
+                    map.append(div)
+                }
             }
         }
 

@@ -5,11 +5,11 @@
     <style>
         .parent {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(8, 1fr);
             grid-template-rows: repeat(4, 1fr);
             grid-column-gap: 10px;
             grid-row-gap: 10px;
-            width: 100%
+            padding: 10px;
         }
 
         div.box {
@@ -25,19 +25,18 @@
             text-align: center;
         }
 
-
         .clicked {
             animation: glow 0.5s ease-in-out;
         }
 
         .headercol {
-            text-align: center;
             font-weight: bold;
         }
 
         .headerrow {
             text-align: center;
             font-weight: bold;
+            /* width: 10%; */
         }
 
         @keyframes glow {
@@ -54,15 +53,7 @@
 
 <body>
     <h1>Aktivitäten</h1>
-    <div style="width: 100%;">
-        <section id='actors'
-            style="display: none; grid-template-columns: repeat(7, 1fr); grid-template-rows: 30px; gap: 0px; width: 100%;">
-        </section>
-        <section id='tasks'
-            style="display: none; float: left; grid-template-columns: repeat(5, 1fr); grid-template-rows: 50px; gap: 0px; height: 100%;">
-        </section>
-        <div class="parent" id="map"></div>
-    </div>
+    <div class="parent" id="map"></div>
     <script>
         // global
         let tasks;
@@ -86,7 +77,13 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
 
-        const projectId = "embarc-heat";
+        const urlSearchParams = new URLSearchParams(window.location.search);
+        const params = Object.fromEntries(urlSearchParams.entries());
+        let projectId = "embarc-heat";
+        if (params['id']) {
+            projectId = params['id'];
+            console.log(`Using project from URL: ${projectId}`);
+        }
         const firebaseConfig = {
             projectId
         };
@@ -110,11 +107,6 @@
         }
 
         function renderConfig() {
-            const tasksHeader = document.getElementById('tasks');
-            const actorsHeader = document.getElementById('actors');
-            // const div = el(`<div class='headercol'></div>`);
-            // actorsHeader.append(div);
-
             const map = document.getElementById('map');
             map.addEventListener('click', async function (e) {
                 // console.log(e.clientX, e.clientY);
@@ -151,12 +143,8 @@
                 }
             });
 
-            for (const taskIdx in tasks) {
-                const task = tasks[taskIdx];
-                const div = el(`<div class='headerrow'>${task}</div>`);
-                tasksHeader.append(div)
-            }
-
+            const div = el(`<div class='headercol'></div>`);
+            map.append(div);
             for (const actorIdx in actors) {
                 const actor = actors[actorIdx];
                 const div = el(`<div class='headercol'>${actor}</div>`);
@@ -166,6 +154,7 @@
 
             for (const taskIdx in tasks) {
                 const task = tasks[taskIdx];
+                map.append(el(`<div class='headerrow'>${task}</div>`))
                 for (const actorIdx in actors) {
                     const actor = actors[actorIdx];
                     const id = `${actor}_${task}`;

@@ -9,24 +9,35 @@
             grid-template-rows: repeat(4, 1fr);
             grid-column-gap: 10px;
             grid-row-gap: 10px;
-        }
-
-        div {
-            /* background-color: #fff;
-            border: 1px solid #f00; */
-            padding: 10px;
-            text-align: center;
+            width: 100%
         }
 
         div.box {
             /* width: 200px;
             height: 200px; */
             /* border-radius: 100px; */
-            background-color: #eee;
+            background-color: #f0f0f0;
         }
+
+
+        div {
+            padding: 10px;
+            text-align: center;
+        }
+
 
         .clicked {
             animation: glow 0.5s ease-in-out;
+        }
+
+        .headercol {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .headerrow {
+            text-align: center;
+            font-weight: bold;
         }
 
         @keyframes glow {
@@ -43,7 +54,15 @@
 
 <body>
     <h1>Aktivitäten</h1>
-    <div class="parent" id="map"></div>
+    <div style="width: 100%;">
+        <section id='actors'
+            style="display: none; grid-template-columns: repeat(7, 1fr); grid-template-rows: 30px; gap: 0px; width: 100%;">
+        </section>
+        <section id='tasks'
+            style="display: none; float: left; grid-template-columns: repeat(5, 1fr); grid-template-rows: 50px; gap: 0px; height: 100%;">
+        </section>
+        <div class="parent" id="map"></div>
+    </div>
     <script>
         // global
         let tasks;
@@ -60,7 +79,8 @@
         const monthInMs = dayInMs * 30;
 
         // TODO: should be taken from config?
-        const decayPeriod = weekInMs;
+        const decayPeriod = minuteInMs;
+        // const decayPeriod = monthInMs;
 
     </script>
     <script type="module">
@@ -90,6 +110,11 @@
         }
 
         function renderConfig() {
+            const tasksHeader = document.getElementById('tasks');
+            const actorsHeader = document.getElementById('actors');
+            // const div = el(`<div class='headercol'></div>`);
+            // actorsHeader.append(div);
+
             const map = document.getElementById('map');
             map.addEventListener('click', async function (e) {
                 // console.log(e.clientX, e.clientY);
@@ -127,9 +152,24 @@
             });
 
             for (const taskIdx in tasks) {
+                const task = tasks[taskIdx];
+                const div = el(`<div class='headerrow'>${task}</div>`);
+                tasksHeader.append(div)
+            }
+
+            for (const actorIdx in actors) {
+                const actor = actors[actorIdx];
+                const div = el(`<div class='headercol'>${actor}</div>`);
+                // actorsHeader.append(div)
+                map.append(div)
+            }
+
+            for (const taskIdx in tasks) {
+                const task = tasks[taskIdx];
                 for (const actorIdx in actors) {
-                    const id = `${actors[actorIdx]}_${tasks[taskIdx]}`;
-                    const div = el(`<div class='box' id="${id}">${actors[actorIdx]}: ${tasks[taskIdx]}</div>`);
+                    const actor = actors[actorIdx];
+                    const id = `${actor}_${task}`;
+                    const div = el(`<div class='box' id="${id}">${actor}: ${task}</div>`);
                     map.append(div)
                 }
             }
@@ -162,7 +202,6 @@
             }
         }
 
-
         function update() {
             const scaledCounts = transientScale();
             Object.entries(scaledCounts).forEach(([id, count]) => {
@@ -172,9 +211,13 @@
                 div.style.backgroundColor = `hsl(120, ${count * 10 * 10 / topCount}%, 75%)`;
                 const [actor, task] = id.split('_');
 
+                // div.textContent = `${actor}: ${task}`;
                 // div.textContent = `${actor}: ${task} (${counts[id]} Aktivitäten pro Monat)`;
+                // div.textContent = `${actor}: ${task} (${counts[id]} Aktivitäten)`;
+                // div.textContent = `${task} (${counts[id]} Aktivitäten)`;
+                div.textContent = `${task}`;
                 // debug
-                div.textContent = `${id} (${count} / ${counts[id]})`;
+                // div.textContent = `${id} (${count} / ${counts[id]})`;
             });
         }
 

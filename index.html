@@ -1,7 +1,7 @@
 <html>
 
 <head>
-    <title>Heatmap</title>
+    <title>Topic Activity</title>
     <style>
         .parent {
             display: grid;
@@ -22,7 +22,7 @@
             /* width: 200px;
             height: 200px; */
             border-radius: 100px;
-            background-color: #ccc;
+            background-color: #eee;
         }
 
         .clicked {
@@ -42,8 +42,17 @@
 </head>
 
 <body>
-    <h1>Heatmap</h1>
+    <h1>Aktivitäten</h1>
     <div class="parent" id="map"></div>
+    <script>
+        // global
+        let tasks;
+        let actors;
+        const counts = {};
+        // const topCount = 10;
+        const topCount = 5;
+
+    </script>
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
@@ -51,18 +60,28 @@
         // https://firebase.google.com/docs/web/setup#available-libraries
 
         // Your web app's Firebase configuration
+        // const firebaseConfig = {
+        //     apiKey: "AIzaSyBCg7K8kqCW1ZxamhiJYwaT4hSGZt3fvsU",
+        //     authDomain: "heat01.firebaseapp.com",
+        //     projectId: "heat01",
+        //     storageBucket: "heat01.appspot.com",
+        //     messagingSenderId: "378247326706",
+        //     appId: "1:378247326706:web:c3a1fa037a9703fd4ed96b"
+        // };
+
+        // Your web app's Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyBCg7K8kqCW1ZxamhiJYwaT4hSGZt3fvsU",
-            authDomain: "heat01.firebaseapp.com",
-            projectId: "heat01",
-            storageBucket: "heat01.appspot.com",
-            messagingSenderId: "378247326706",
-            appId: "1:378247326706:web:c3a1fa037a9703fd4ed96b"
+            apiKey: "AIzaSyCFZNYt9-r_Q71VoSh9pcnEGe_5gY9c0bk",
+            authDomain: "heatmap-335615.firebaseapp.com",
+            projectId: "heatmap-335615",
+            storageBucket: "heatmap-335615.appspot.com",
+            messagingSenderId: "995468179165",
+            appId: "1:995468179165:web:9231c57cb5f02a5bd58d34"
         };
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        import { getFirestore, collection, getDocs, doc, getDoc, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc, addDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
         const db = getFirestore();
 
         function el(html) {
@@ -71,11 +90,14 @@
             return template.content.firstChild;
         }
 
-        function renderConfig(config) {
-            const tasks = config.tasks;
-            const actors = config.actors;
-            // console.log(actors)
+        function glow(el) {
+            el.classList.add('clicked');
+            setTimeout(() => {
+                el.classList.remove('clicked');
+            }, 500);
+        }
 
+        function renderConfig() {
             const map = document.getElementById('map');
             map.addEventListener('click', async function (e) {
                 // console.log(e.clientX, e.clientY);
@@ -91,43 +113,154 @@
                 const id = el.id;
                 const [actor, task] = id.split('_');
                 if (task) {
-                    el.classList.add("clicked");
-                    setTimeout(() => {
-                        el.classList.remove("clicked");
-                    }, 1000);
-                    console.log(actor, task)
+                    // console.log(actor, task);
+                    glow(el);
+
+                    // optimistic update for quick response
+                    const id = `${actor}_${task}`;
+                    counts[id]++;
+                    update();
                     try {
                         const docRef = await addDoc(collection(db, "pings"), {
                             actor,
                             task,
                             timestamp: Date.now()
                         });
-                        console.log("Document written with ID: ", docRef.id);
+                        // console.log("Document written with ID: ", docRef.id);
                     } catch (e) {
                         console.error("Error adding document: ", e);
                     }
                 }
-
             });
 
-            for (const task in tasks) {
-                for (const actor in actors) {
-                    const div = el(`<div class='box' id="${actors[actor]}_${tasks[task]}">${actors[actor]}: ${tasks[task]}</div>`);
+            for (const taskIdx in tasks) {
+                for (const actorIdx in actors) {
+                    const id = `${actors[actorIdx]}_${tasks[taskIdx]}`;
+                    const div = el(`<div class='box' id="${id}">${actors[actorIdx]}: ${tasks[taskIdx]}</div>`);
                     map.append(div)
                 }
             }
         }
 
-        const docRef = doc(db, "config", "singleton");
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            console.log("Document data:", docSnap.data());
-            renderConfig(docSnap.data());
-        } else {
-            // doc.data() will be undefined in this case
-            console.log("No such document!");
+        function configure(config) {
+            tasks = config.tasks;
+            actors = config.actors;
+            renderConfig();
         }
+
+        async function init() {
+            await removeDecay();
+
+            // const docRef = doc(db, "config", "singleton");
+            const docRef = doc(db, "Config", "DPOkR9b7aIYQWWYcdILN");
+
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                // console.log("Document data:", docSnap.data());
+                configure(docSnap.data());
+                await aggregate();
+                update();
+            } else {
+                // doc.data() will be undefined in this case
+                console.error("No such document!");
+            }
+        }
+
+
+        function update() {
+            const scaledCounts = transientScale();
+            Object.entries(scaledCounts).forEach(([id, count]) => {
+                const div = document.getElementById(id);
+                // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()
+                // https://drafts.csswg.org/css-color-3/#hsl-color
+                div.style.backgroundColor = `hsl(120, ${count * 10 * 10 / topCount}%, 75%)`;
+                const [actor, task] = id.split('_');
+
+                div.textContent = `${actor}: ${task} (${counts[id]} Aktivitäten pro Monat)`;
+                // debug
+                // div.textContent = `${id} (${count} / ${counts[id]})`;
+            });
+        }
+
+        async function aggregate() {
+            for (const taskIdx in tasks) {
+                for (const actorIdx in actors) {
+                    const id = `${actors[actorIdx]}_${tasks[taskIdx]}`;
+                    counts[id] = 0;
+                }
+            }
+
+            // https://firebase.google.com/docs/firestore/quickstart#read_data
+            const querySnapshot = await getDocs(collection(db, "pings"));
+            querySnapshot.forEach((doc) => {
+                const { actor, task, timestamp } = doc.data();
+                // console.log(`${doc.id} => ${actor}, ${task}, ${timestamp}`);
+                const id = `${actor}_${task}`;
+                counts[id]++;
+            });
+        }
+
+        // Non trivial properties (most likely logically not doable)
+        // 1. The color of the box should be based on the number of clicks
+        // 2. When a user clicks, they should be able to perceive a clear increase in color (perceived as positive feedback)
+        // 3. Clicks must not overflow, i.e. there should always be an increase no matter how many times they click
+        // 4. When reloading the application the color of the boxes should be same as when the application was closed (given no one else added clicks in the meantime)
+        // 5. When the rate of clicks decays, the color of the boxes should be darker
+        // 
+        // Constraints:
+        // 1. Expect at most one click per topic per session
+        // 2. When reloading all colors are rescaled, possibly giving slightly different hue
+        //
+        // Solution:
+        // 1. When max clicks < 10 do not scale, otherwise
+        // 2. Scaled by 10 / max clicks
+        // 3. Round, but never let one click be zero
+        // 4. Add a visual trick to make the topic glow for a second, no one will notice if the color really changed
+        function transientScale() {
+            const max = Object.values(counts).reduce((a, b) => Math.max(a, b));
+            if (max <= topCount) {
+                return counts;
+            }
+            const scaledCounts = {};
+            Object.entries(counts).forEach(([id, count]) => {
+                let scaled;
+                scaled = Math.ceil(count / max * topCount);
+                scaledCounts[id] = scaled;
+            });
+            return scaledCounts;
+        }
+
+        // remove activities no longer relevant
+        // rolling window
+        async function removeDecay() {
+            const minuteInMs = 1000 * 60;
+            const hourInMs = minuteInMs * 60;
+            const dayInMs = hourInMs * 24;
+            const weekInMs = dayInMs * 7;
+            const monthInMs = dayInMs * 30;
+            const decayPeriod = weekInMs;
+            const cutOffTimestamp = Date.now() - decayPeriod;
+
+            // FIXME: does not work when working on data read 
+            // do all detetes in on batch
+            // const batch = writeBatch(db);
+
+            let removedPings = 0
+            const q = query(collection(db, "pings"), where("timestamp", "<", cutOffTimestamp));
+            const querySnapshot = await getDocs(q);
+            await Promise.all(
+                querySnapshot.docs.map((doc) => {
+                    // batch.delete(doc);
+                    removedPings++;
+                    return deleteDoc(doc.ref);
+                }));
+
+            console.log(`Removed ${removedPings} outdated pings`);
+            // await batch.commit();
+        }
+
+        init();
     </script>
 
 </body>

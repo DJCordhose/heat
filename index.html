@@ -21,7 +21,7 @@
         div.box {
             /* width: 200px;
             height: 200px; */
-            border-radius: 100px;
+            /* border-radius: 100px; */
             background-color: #eee;
         }
 
@@ -48,35 +48,27 @@
         // global
         let tasks;
         let actors;
+        let meta;
+        let topCount = 10;
+
         const counts = {};
-        // const topCount = 10;
-        const topCount = 5;
+
+        const minuteInMs = 1000 * 60;
+        const hourInMs = minuteInMs * 60;
+        const dayInMs = hourInMs * 24;
+        const weekInMs = dayInMs * 7;
+        const monthInMs = dayInMs * 30;
+
+        // TODO: should be taken from config?
+        const decayPeriod = weekInMs;
 
     </script>
     <script type="module">
-        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
 
-        // Your web app's Firebase configuration
-        // const firebaseConfig = {
-        //     apiKey: "AIzaSyBCg7K8kqCW1ZxamhiJYwaT4hSGZt3fvsU",
-        //     authDomain: "heat01.firebaseapp.com",
-        //     projectId: "heat01",
-        //     storageBucket: "heat01.appspot.com",
-        //     messagingSenderId: "378247326706",
-        //     appId: "1:378247326706:web:c3a1fa037a9703fd4ed96b"
-        // };
-
-        // Your web app's Firebase configuration
+        const projectId = "embarc-heat";
         const firebaseConfig = {
-            // apiKey: "AIzaSyCFZNYt9-r_Q71VoSh9pcnEGe_5gY9c0bk",
-            // authDomain: "heatmap-335615.firebaseapp.com",
-            projectId: "heatmap-335615",
-            // storageBucket: "heatmap-335615.appspot.com",
-            // messagingSenderId: "995468179165",
-            // appId: "1:995468179165:web:9231c57cb5f02a5bd58d34"
+            projectId
         };
 
         // Initialize Firebase
@@ -124,7 +116,8 @@
                         const docRef = await addDoc(collection(db, "pings"), {
                             actor,
                             task,
-                            timestamp: Date.now()
+                            timestamp: Date.now(),
+                            cnt: 1
                         });
                         // console.log("Document written with ID: ", docRef.id);
                     } catch (e) {
@@ -145,14 +138,16 @@
         function configure(config) {
             tasks = config.tasks;
             actors = config.actors;
+            meta = config.meta;
+            if (config.topCount)
+                topCount = config.topCount;
             renderConfig();
         }
 
         async function init() {
-            await removeDecay();
+            // await removeDecayed();
 
-            // const docRef = doc(db, "config", "singleton");
-            const docRef = doc(db, "Config", "DPOkR9b7aIYQWWYcdILN");
+            const docRef = doc(db, "config", "singleton");
 
             const docSnap = await getDoc(docRef);
 
@@ -177,9 +172,9 @@
                 div.style.backgroundColor = `hsl(120, ${count * 10 * 10 / topCount}%, 75%)`;
                 const [actor, task] = id.split('_');
 
-                div.textContent = `${actor}: ${task} (${counts[id]} Aktivitäten pro Monat)`;
+                // div.textContent = `${actor}: ${task} (${counts[id]} Aktivitäten pro Monat)`;
                 // debug
-                // div.textContent = `${id} (${count} / ${counts[id]})`;
+                div.textContent = `${id} (${count} / ${counts[id]})`;
             });
         }
 
@@ -194,10 +189,10 @@
             // https://firebase.google.com/docs/firestore/quickstart#read_data
             const querySnapshot = await getDocs(collection(db, "pings"));
             querySnapshot.forEach((doc) => {
-                const { actor, task, timestamp } = doc.data();
+                const { actor, task, timestamp, cnt } = doc.data();
                 // console.log(`${doc.id} => ${actor}, ${task}, ${timestamp}`);
                 const id = `${actor}_${task}`;
-                counts[id]++;
+                counts[id] += cnt;
             });
         }
 
@@ -233,13 +228,7 @@
 
         // remove activities no longer relevant
         // rolling window
-        async function removeDecay() {
-            const minuteInMs = 1000 * 60;
-            const hourInMs = minuteInMs * 60;
-            const dayInMs = hourInMs * 24;
-            const weekInMs = dayInMs * 7;
-            const monthInMs = dayInMs * 30;
-            const decayPeriod = weekInMs;
+        async function removeDecayed() {
             const cutOffTimestamp = Date.now() - decayPeriod;
 
             // FIXME: does not work when working on data read 

@@ -1,7 +1,0 @@
-{
-  "name": "heat",
-  "version": "1.0.0",
-  "main": "index.js",
-  "author": "Oliver Zeigermann <oliver@zeigermann.de>",
-  "license": "MIT"
-}

@@ -52,7 +52,7 @@
 </head>
 
 <body>
-    <h1>Aktivitäten</h1>
+    <!-- <h1>Aktivitäten</h1> -->
     <div class="parent" id="map"></div>
     <script>
         // global
@@ -70,8 +70,9 @@
         const monthInMs = dayInMs * 30;
 
         // TODO: should be taken from config?
-        const decayPeriod = minuteInMs;
-        // const decayPeriod = monthInMs;
+        // const decayPeriod = minuteInMs;
+        // const decayPeriod = minuteInMs;
+        let decayPeriod = monthInMs;
 
     </script>
     <script type="module">
@@ -79,7 +80,10 @@
 
         const urlSearchParams = new URLSearchParams(window.location.search);
         const params = Object.fromEntries(urlSearchParams.entries());
-        let projectId = "embarc-heat";
+        // let projectId = "embarc-heat";
+        let projectId = "olli-heat";
+        // let projectId = "heat-dev";
+
         if (params['id']) {
             projectId = params['id'];
             console.log(`Using project from URL: ${projectId}`);
@@ -168,13 +172,28 @@
             tasks = config.tasks;
             actors = config.actors;
             meta = config.meta;
+            if (config.title)
+                document.title = config.title;
             if (config.topCount)
                 topCount = config.topCount;
+            if (config.period) {
+                switch (config.period) {
+                    case 'day':
+                        decayPeriod = dayInMs;
+                        break;
+                    case 'week':
+                        decayPeriod = weekInMs;
+                        break;
+                    case 'month':
+                        decayPeriod = monthInMs;
+                        break;
+                }
+            }
             renderConfig();
         }
 
         async function init() {
-            // await removeDecayed();
+            await removeDecayed();
 
             const docRef = doc(db, "config", "singleton");
 
@@ -204,7 +223,7 @@
                 // div.textContent = `${actor}: ${task} (${counts[id]} Aktivitäten pro Monat)`;
                 // div.textContent = `${actor}: ${task} (${counts[id]} Aktivitäten)`;
                 // div.textContent = `${task} (${counts[id]} Aktivitäten)`;
-                div.textContent = `${task}`;
+                div.textContent = `${task} (${counts[id]})`;
                 // debug
                 // div.textContent = `${id} (${count} / ${counts[id]})`;
             });

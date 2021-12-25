@@ -42,11 +42,11 @@
 
         @keyframes glow {
             from {
-                box-shadow: 0 0 10px -10px #aef4af;
+                box-shadow: 0 0 10px -10px;
             }
 
             to {
-                box-shadow: 0 0 10px 10px #aef4af;
+                box-shadow: 0 0 10px 10px;
             }
         }
     </style>
@@ -125,68 +125,115 @@
             }, 500);
         }
 
+        async function updateCnt(actor, task, cnt) {
+            // optimistic update for quick response
+            const id = `${actor}_${task}`;
+            counts[id] += cnt;
+            update();
+            try {
+                const docRef = await addDoc(collection(db, "pings"), {
+                    actor,
+                    task,
+                    timestamp: Date.now(),
+                    cnt
+                });
+                // console.log("Document written with ID: ", docRef.id);
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            }
+
+        }
+
+        function updateEvent(e, direction) {
+            const el = e.target;
+            const id = el.id;
+            const [actor, task] = id.split('_');
+            if (task) {
+
+                let cnt = 1;
+                if (scores && scores[task]) {
+                    cnt = scores[task]
+                }
+                // prevent over and underflow
+                // if (counts[id] === 0) {
+                //     if (cnt < 0 && direction < 0) {
+                //         return;
+                //     }
+                //     if (cnt > 0 && direction > 0) {
+                //         return;
+                //     }
+                // }
+
+                // glow(el);
+                cnt *= direction;
+                updateCnt(actor, task, cnt);
+            }
+        }
+
         function renderConfig() {
             const map = document.getElementById('map');
-            map.addEventListener('click', async function (e) {
-                // console.log(e.clientX, e.clientY);
-                // const x = e.offsetX;
-                // const y = e.offsetY;
-                // const x = e.clientX;
-                // const y = e.clientY;
-                // console.log(e.target)
-                // const elem = el(`<div style="position: absolute; top: ${y}px; left: ${x}px; background: red; width: 10px; height: 10px;"></div>`);
-                // map.appendChild(elem);
+            // map.addEventListener('click', function (e) {
+            //     console.log('click', e.detail);
+            // console.log(e.clientX, e.clientY);
+            // const x = e.offsetX;
+            // const y = e.offsetY;
+            // const x = e.clientX;
+            // const y = e.clientY;
+            // console.log(e.target)
+            // const elem = el(`<div style="position: absolute; top: ${y}px; left: ${x}px; background: red; width: 10px; height: 10px;"></div>`);
+            // map.appendChild(elem);
+        // }
+        let pendingClick = null;
+        map.addEventListener('click', function (e) {
+            console.log('click', e.detail);
+            // kill any pending single clicks
+            if (pendingClick) {
+                clearTimeout(pendingClick);
+                pendingClick = null;
+            }
 
-                const el = e.target;
-                const id = el.id;
-                const [actor, task] = id.split('_');
-                if (task) {
-                    // console.log(actor, task);
-                    glow(el);
+            // updateEvent(e, 1);
 
-                    let cnt = 1;
-                    if (scores && scores[task]) {
-                        cnt = scores[task]
-                    }
+            switch (e.detail) {
+                case 1:
+                    // TODO: consider making the optimistic update immediately and don't update the DB when the user clicks again
+                    // updateEvent(e, 1);
+                    pendingClick = setTimeout(function () {
+                        console.log('single click');
+                        updateEvent(e, 1);
+                    }, 300);
+                    break;
+                case 2:
+                    console.log('double click');
+                    updateEvent(e, -1);
+                    break;
+                default:
+                    console.log('higher multi-click actions can be added as needed');
+                    break;
+            }
 
-                    // optimistic update for quick response
-                    const id = `${actor}_${task}`;
-                    counts[id] += cnt;
-                    update();
-                    try {
-                        const docRef = await addDoc(collection(db, "pings"), {
-                            actor,
-                            task,
-                            timestamp: Date.now(),
-                            cnt
-                        });
-                        // console.log("Document written with ID: ", docRef.id);
-                    } catch (e) {
-                        console.error("Error adding document: ", e);
-                    }
-                }
-            });
+        });
 
-            const div = el(`<div class='headercol'></div>`);
-            map.append(div);
+        const div = el(`<div class='headercol'></div>`);
+        map.append(div);
+        for (const actorIdx in actors) {
+            const actor = actors[actorIdx];
+            const div = el(`<div class='headercol'>${actor}</div>`);
+            // actorsHeader.append(div)
+            map.append(div)
+        }
+
+        for (const taskIdx in tasks) {
+            const task = tasks[taskIdx];
+            const title = descriptions[task];
+            map.append(el(`<div class='headerrow' title='${title}'>${task}</div>`))
             for (const actorIdx in actors) {
                 const actor = actors[actorIdx];
-                const div = el(`<div class='headercol'>${actor}</div>`);
-                // actorsHeader.append(div)
+                const id = `${actor}_${task}`;
+                const div = el(`<div class='box' id="${id}" title='${title}'>${actor}: ${task}</div>`);
                 map.append(div)
             }
-
-            for (const taskIdx in tasks) {
-                const task = tasks[taskIdx];
-                const title = descriptions[task];
-                map.append(el(`<div class='headerrow' title='${title}'>${task}</div>`))
-                for (const actorIdx in actors) {
-                    const actor = actors[actorIdx];
-                    const id = `${actor}_${task}`;
-                    const div = el(`<div class='box' id="${id}" title='${title}'>${actor}: ${task}</div>`);
-                    map.append(div)
-                }
-            }
+        }
         }
 
         function configure(config) {
@@ -219,7 +266,7 @@
         }
 
         async function init() {
-            await removeDecayed();
+            // await removeDecayed();
 
             const docRef = doc(db, configCollection, "singleton");
             const docSnap = await getDoc(docRef);
@@ -237,23 +284,23 @@
 
         function update() {
             const scaledCounts = transientScale();
-            Object.entries(scaledCounts).forEach(([id, count]) => {
+            Object.entries(scaledCounts).forEach(([id, scaledCount]) => {
                 const [actor, task] = id.split('_');
                 let hueAngle = 120; // green
                 if (scores && scores[task] && scores[task] < 0) {
                     hueAngle = 0; // red
-                    count *= -1;
+                    scaledCount *= -1;
                 }
                 const div = document.getElementById(id);
                 // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()
                 // https://drafts.csswg.org/css-color-3/#hsl-color
-                div.style.backgroundColor = `hsl(${hueAngle}, ${count * 10 * 10 / topCount}%, 75%)`;
+                div.style.backgroundColor = `hsl(${hueAngle}, ${scaledCount * 10 * 10 / topCount}%, 75%)`;
 
                 // div.textContent = `${actor}: ${task}`;
                 // div.textContent = `${actor}: ${task} (${counts[id]} Aktivitäten pro Monat)`;
                 // div.textContent = `${actor}: ${task} (${counts[id]} Aktivitäten)`;
                 // div.textContent = `${task} (${counts[id]} Aktivitäten)`;
-                div.textContent = `${task} (${count})`;
+                div.textContent = `${task} (${counts[id]})`;
                 // debug
                 // div.textContent = `${id} (${count} / ${counts[id]})`;
             });

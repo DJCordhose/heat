@@ -57,6 +57,7 @@
     <div class="parent" id="map"></div>
     <script>
         // global
+        let globalConfig;
         let tasks;
         let actors = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
         let scores;
@@ -76,6 +77,18 @@
         // const decayPeriod = minuteInMs;
         let decayPeriod = monthInMs;
 
+        let configCollection = 'config';
+        let pingsCollection = 'pings';
+
+        const urlSearchParams = new URLSearchParams(window.location.search);
+        const params = Object.fromEntries(urlSearchParams.entries());
+        if (params['pings']) {
+            pingsCollection = params['pings'];
+        }
+        if (params['config']) {
+            configCollection = params['config'];
+        }
+
     </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
@@ -85,7 +98,6 @@
         // let projectId = "embarc-heat";
         // let projectId = "olli-heat";
         let projectId = "heat-dev-336112";
-
         if (params['id']) {
             projectId = params['id'];
             console.log(`Using project from URL: ${projectId}`);
@@ -96,7 +108,8 @@
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        import { getFirestore, collection, query, where, getDocs, doc, getDoc, addDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc, addDoc, deleteDoc, writeBatch }
+            from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
         const db = getFirestore();
 
         function el(html) {
@@ -177,6 +190,7 @@
         }
 
         function configure(config) {
+            globalConfig = config;
             tasks = config.tasks;
             if (config.actors)
                 actors = config.actors;
@@ -207,8 +221,7 @@
         async function init() {
             await removeDecayed();
 
-            const docRef = doc(db, "config", "singleton");
-
+            const docRef = doc(db, configCollection, "singleton");
             const docSnap = await getDoc(docRef);
 
             if (docSnap.exists()) {
@@ -229,7 +242,7 @@
                 let hueAngle = 120; // green
                 if (scores && scores[task] && scores[task] < 0) {
                     hueAngle = 0; // red
-                    count *= -1;   
+                    count *= -1;
                 }
                 const div = document.getElementById(id);
                 // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()

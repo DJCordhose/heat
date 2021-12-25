@@ -57,8 +57,9 @@
     <script>
         // global
         let tasks;
-        let actors;
-        let meta;
+        let actors = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+        let scores;
+        let descriptions;
         let topCount = 10;
 
         const counts = {};
@@ -81,8 +82,8 @@
         const urlSearchParams = new URLSearchParams(window.location.search);
         const params = Object.fromEntries(urlSearchParams.entries());
         // let projectId = "embarc-heat";
-        let projectId = "olli-heat";
-        // let projectId = "heat-dev";
+        // let projectId = "olli-heat";
+        let projectId = "heat-dev-336112";
 
         if (params['id']) {
             projectId = params['id'];
@@ -158,11 +159,12 @@
 
             for (const taskIdx in tasks) {
                 const task = tasks[taskIdx];
-                map.append(el(`<div class='headerrow'>${task}</div>`))
+                const title = descriptions[task];
+                map.append(el(`<div class='headerrow' title='${title}'>${task}</div>`))
                 for (const actorIdx in actors) {
                     const actor = actors[actorIdx];
                     const id = `${actor}_${task}`;
-                    const div = el(`<div class='box' id="${id}">${actor}: ${task}</div>`);
+                    const div = el(`<div class='box' id="${id}" title='${title}'>${actor}: ${task}</div>`);
                     map.append(div)
                 }
             }
@@ -170,8 +172,12 @@
 
         function configure(config) {
             tasks = config.tasks;
-            actors = config.actors;
-            meta = config.meta;
+            if (config.actors)
+                actors = config.actors;
+            if (config.descriptions)
+                descriptions = config.descriptions;
+            if (config.scores)
+                scores = config.scores;
             if (config.title)
                 document.title = config.title;
             if (config.topCount)

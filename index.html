@@ -17,6 +17,7 @@
             height: 200px; */
             /* border-radius: 100px; */
             background-color: #f0f0f0;
+            user-select: none;
         }
 
 
@@ -130,16 +131,21 @@
                     // console.log(actor, task);
                     glow(el);
 
+                    let cnt = 1;
+                    if (scores && scores[task]) {
+                        cnt = scores[task]
+                    }
+
                     // optimistic update for quick response
                     const id = `${actor}_${task}`;
-                    counts[id]++;
+                    counts[id] += cnt;
                     update();
                     try {
                         const docRef = await addDoc(collection(db, "pings"), {
                             actor,
                             task,
                             timestamp: Date.now(),
-                            cnt: 1
+                            cnt
                         });
                         // console.log("Document written with ID: ", docRef.id);
                     } catch (e) {
@@ -219,17 +225,22 @@
         function update() {
             const scaledCounts = transientScale();
             Object.entries(scaledCounts).forEach(([id, count]) => {
+                const [actor, task] = id.split('_');
+                let hueAngle = 120; // green
+                if (scores && scores[task] && scores[task] < 0) {
+                    hueAngle = 0; // red
+                    count *= -1;   
+                }
                 const div = document.getElementById(id);
                 // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()
                 // https://drafts.csswg.org/css-color-3/#hsl-color
-                div.style.backgroundColor = `hsl(120, ${count * 10 * 10 / topCount}%, 75%)`;
-                const [actor, task] = id.split('_');
+                div.style.backgroundColor = `hsl(${hueAngle}, ${count * 10 * 10 / topCount}%, 75%)`;
 
                 // div.textContent = `${actor}: ${task}`;
                 // div.textContent = `${actor}: ${task} (${counts[id]} Aktivitäten pro Monat)`;
                 // div.textContent = `${actor}: ${task} (${counts[id]} Aktivitäten)`;
                 // div.textContent = `${task} (${counts[id]} Aktivitäten)`;
-                div.textContent = `${task} (${counts[id]})`;
+                div.textContent = `${task} (${count})`;
                 // debug
                 // div.textContent = `${id} (${count} / ${counts[id]})`;
             });

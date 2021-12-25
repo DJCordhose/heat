@@ -59,9 +59,10 @@
         // global
         let globalConfig;
         let tasks;
-        let actors = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-        let scores;
-        let descriptions;
+        // let actors = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+        let actors = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        let scores = {};
+        let descriptions = {};
         let topCount = 10;
 
         const counts = {};
@@ -82,11 +83,12 @@
 
         const urlSearchParams = new URLSearchParams(window.location.search);
         const params = Object.fromEntries(urlSearchParams.entries());
-        if (params['pings']) {
-            pingsCollection = params['pings'];
-        }
         if (params['config']) {
             configCollection = params['config'];
+            pingsCollection = `${configCollection}-pings`;
+        }
+        if (params['pings']) {
+            pingsCollection = params['pings'];
         }
 
     </script>
@@ -95,8 +97,6 @@
 
         const urlSearchParams = new URLSearchParams(window.location.search);
         const params = Object.fromEntries(urlSearchParams.entries());
-        // let projectId = "embarc-heat";
-        // let projectId = "olli-heat";
         let projectId = "heat-dev-336112";
         if (params['id']) {
             projectId = params['id'];
@@ -131,7 +131,7 @@
             counts[id] += cnt;
             update();
             try {
-                const docRef = await addDoc(collection(db, "pings"), {
+                const docRef = await addDoc(collection(db, pingsCollection), {
                     actor,
                     task,
                     timestamp: Date.now(),
@@ -201,7 +201,7 @@
                     pendingClick = setTimeout(function () {
                         console.log('single click');
                         updateEvent(e, 1);
-                    }, 300);
+                    }, 400);
                     break;
                 case 2:
                     console.log('double click');
@@ -315,7 +315,7 @@
             }
 
             // https://firebase.google.com/docs/firestore/quickstart#read_data
-            const querySnapshot = await getDocs(collection(db, "pings"));
+            const querySnapshot = await getDocs(collection(db, pingsCollection));
             querySnapshot.forEach((doc) => {
                 const { actor, task, timestamp, cnt } = doc.data();
                 // console.log(`${doc.id} => ${actor}, ${task}, ${timestamp}`);
@@ -364,7 +364,7 @@
             // const batch = writeBatch(db);
 
             let removedPings = 0
-            const q = query(collection(db, "pings"), where("timestamp", "<", cutOffTimestamp));
+            const q = query(collection(db, pingsCollection), where("timestamp", "<", cutOffTimestamp));
             const querySnapshot = await getDocs(q);
             await Promise.all(
                 querySnapshot.docs.map((doc) => {

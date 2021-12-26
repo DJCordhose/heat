@@ -277,7 +277,7 @@
                 // https://drafts.csswg.org/css-color-3/#hsl-color
                 div.style.backgroundColor = `hsl(${hueAngle}, ${scaledCount * 10 * 10 / topCount}%, 75%)`;
 
-                div.innerHTML = `<input value='${counts[id]}' size=1 class='count'>`;
+                div.innerHTML = `<input value='${counts[id]}' size=2 class='count'>`;
                 div.children[0].addEventListener('blur', function (e) {
                     updateCnt(actor, task, parseInt(e.target.value - counts[id]));
                 });

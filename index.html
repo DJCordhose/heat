@@ -28,8 +28,12 @@
             text-align: center;
         }
 
-        .clicked {
-            animation: glow 0.5s ease-in-out;
+        .clicked-green {
+            animation: glow-green 0.5s ease-in-out;
+        }
+
+        .clicked-red {
+            animation: glow-red 0.5s ease-in-out;
         }
 
         .headercol {
@@ -54,16 +58,27 @@
             text-align: center;
         }
 
-        @keyframes glow {
+        @keyframes glow-green {
             from {
-                box-shadow: 0 0 10px -10px;
+                box-shadow: 0 0 10px -10px #aef4af;
             }
 
             to {
-                box-shadow: 0 0 10px 10px;
+                box-shadow: 0 0 10px 10px #aef4af;
             }
         }
-    </style>
+
+        @keyframes glow-red {
+            from {
+                box-shadow: 0 0 10px -10px #f4aeaf;
+            }
+
+            to {
+                box-shadow: 0 0 10px 10px #f4aeaf;
+            }
+        }
+
+</style>
 </head>
 
 <body>
@@ -140,10 +155,10 @@
             return template.content.firstChild;
         }
 
-        function glow(el) {
-            el.classList.add('clicked');
+        function glow(el, color) {
+            el.classList.add(`clicked-${color}`);
             setTimeout(() => {
-                el.classList.remove('clicked');
+                el.classList.remove(`clicked-${color}`);
             }, 500);
         }
 
@@ -166,26 +181,21 @@
 
         }
 
-        function updateEvent(e, direction) {
-            const el = e.target;
-            const id = el.id;
-            const [actor, task] = id.split('_');
-            if (task) {
+        function renderConfig() {
+            const map = document.getElementById('map');
+            map.addEventListener('click', function (e) {
+                const el = e.target;
+                const id = el.id;
+                const [actor, task] = id.split('_');
+                if (task) {
 
                 let cnt = 1;
                 if (scores && scores[task]) {
                     cnt = scores[task]
                 }
-                glow(el);
-                cnt *= direction;
+                glow(el, cnt < 0 ? 'red' : 'green');
                 updateCnt(actor, task, cnt);
             }
-        }
-
-        function renderConfig() {
-            const map = document.getElementById('map');
-            map.addEventListener('click', function (e) {
-                updateEvent(e, 1);
             });
 
             const div = el(`<div class='headercol'></div>`);

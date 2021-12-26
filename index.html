@@ -16,7 +16,6 @@
             /* width: 200px;
             height: 200px; */
             /* border-radius: 100px; */
-            background-color: #f0f0f0;
             user-select: none;
             display: flex;
             justify-content: center;
@@ -34,13 +33,19 @@
         }
 
         .headercol {
+            display: flex;
+            justify-content: center;
+            align-items: center;
             font-weight: bold;
         }
 
         .headerrow {
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             font-weight: bold;
-            /* width: 10%; */
+            padding: 5px;
         }
 
         .count {
@@ -72,6 +77,7 @@
         let actors;
         let scores = {};
         let descriptions = {};
+        let symbols = {};
         let topCount = 5;
 
         const counts = {};
@@ -193,7 +199,13 @@
             for (const taskIdx in tasks) {
                 const task = tasks[taskIdx];
                 const title = descriptions[task];
-                const div = el(`<div class='headerrow'>${task}</div>`);
+                const symbol = symbols[task];
+                let div;
+                if (symbol) {
+                    div = el(`<div class='headerrow'><img src='./${symbol}.png' width=100% style='padding-bottom: 5px'><span>${task}</span></div>`);
+                } else {
+                    div = el(`<div class='headerrow'><span>${task}</span></div>`);
+                }
                 if (title)
                     div.title = title;
 
@@ -220,6 +232,8 @@
         function configure(config) {
             globalConfig = config;
             tasks = config.tasks;
+            if (config.symbols)
+                symbols = config.symbols;
             if (config.actors)
                 actors = config.actors;
             if (config.descriptions)
@@ -247,7 +261,7 @@
         }
 
         async function init() {
-            // await removeDecayed();
+            await removeDecayed();
 
             const docRef = doc(db, configCollection, "singleton");
             const docSnap = await getDoc(docRef);

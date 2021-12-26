@@ -77,8 +77,7 @@
                 box-shadow: 0 0 10px 10px #f4aeaf;
             }
         }
-
-</style>
+    </style>
 </head>
 
 <body>
@@ -128,6 +127,10 @@
             pingsCollection = params['pings'];
         }
 
+        function exportConfig() {
+            return Object.assign({actors}, globalConfig);
+        }
+
     </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
@@ -145,7 +148,7 @@
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        import { getFirestore, collection, query, where, getDocs, doc, getDoc, addDoc, deleteDoc, writeBatch }
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc, addDoc, setDoc, deleteDoc, writeBatch }
             from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
         const db = getFirestore();
 
@@ -181,6 +184,17 @@
 
         }
 
+        async function writeConfig(configName, config) {
+            try {
+                const docRef = await setDoc(doc(db, configName, "singleton"), config);
+                console.log("Document written with ID: ", docRef.id);
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            }
+
+        }
+        window.writeConfig = writeConfig;
+
         function renderConfig() {
             const map = document.getElementById('map');
             map.addEventListener('click', function (e) {
@@ -189,13 +203,13 @@
                 const [actor, task] = id.split('_');
                 if (task) {
 
-                let cnt = 1;
-                if (scores && scores[task]) {
-                    cnt = scores[task]
+                    let cnt = 1;
+                    if (scores && scores[task]) {
+                        cnt = scores[task]
+                    }
+                    glow(el, cnt < 0 ? 'red' : 'green');
+                    updateCnt(actor, task, cnt);
                 }
-                glow(el, cnt < 0 ? 'red' : 'green');
-                updateCnt(actor, task, cnt);
-            }
             });
 
             const div = el(`<div class='headercol'></div>`);

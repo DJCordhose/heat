@@ -18,6 +18,9 @@
             /* border-radius: 100px; */
             background-color: #f0f0f0;
             user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
 
@@ -313,16 +316,10 @@
                 // https://drafts.csswg.org/css-color-3/#hsl-color
                 div.style.backgroundColor = `hsl(${hueAngle}, ${scaledCount * 10 * 10 / topCount}%, 75%)`;
 
-                // div.textContent = `${actor}: ${task}`;
-                // div.textContent = `${actor}: ${task} (${counts[id]} Aktivitäten pro Monat)`;
-                // div.textContent = `${actor}: ${task} (${counts[id]} Aktivitäten)`;
-                // div.textContent = `${task} (${counts[id]} Aktivitäten)`;
                 div.innerHTML = `<input value='${counts[id]}' size=2 class='count'>`;
                 div.children[0].addEventListener('blur', function (e) {
                     updateCnt(actor, task, parseInt(e.target.value - counts[id]));
                 });
-                // debug
-                // div.textContent = `${id} (${count} / ${counts[id]})`;
             });
         }
 

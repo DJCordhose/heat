@@ -72,7 +72,7 @@
         let actors;
         let scores = {};
         let descriptions = {};
-        let topCount = 10;
+        let topCount = 5;
 
         const counts = {};
 
@@ -246,7 +246,20 @@
             for (const taskIdx in tasks) {
                 const task = tasks[taskIdx];
                 const title = descriptions[task];
-                map.append(el(`<div class='headerrow' title='${title}'>${task}</div>`))
+                let div;
+                if (title)
+                    div = el(`<div class='headerrow' title='${title}'>${task}</div>`);
+                else
+                    div = el(`<div class='headerrow'>${task}</div>`);
+                
+                let hueAngle = 120;
+                if (scores[task] && scores[task] < 0) {
+                    hueAngle = 0; // red
+                }
+
+                div.style.backgroundColor = `hsl(${hueAngle}, 100%, 75%)`;
+                map.append(div)
+
                 for (const actorIdx in actors) {
                     const actor = actors[actorIdx];
                     const id = `${actor}_${task}`;
@@ -307,7 +320,7 @@
             Object.entries(scaledCounts).forEach(([id, scaledCount]) => {
                 const [actor, task] = id.split('_');
                 let hueAngle = 120; // green
-                if (scores && scores[task] && scores[task] < 0) {
+                if (scores[task] && scores[task] < 0) {
                     hueAngle = 0; // red
                     scaledCount *= -1;
                 }

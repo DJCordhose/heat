@@ -246,12 +246,10 @@
             for (const taskIdx in tasks) {
                 const task = tasks[taskIdx];
                 const title = descriptions[task];
-                let div;
+                const div = el(`<div class='headerrow'>${task}</div>`);
                 if (title)
-                    div = el(`<div class='headerrow' title='${title}'>${task}</div>`);
-                else
-                    div = el(`<div class='headerrow'>${task}</div>`);
-                
+                    div.title = title;
+
                 let hueAngle = 120;
                 if (scores[task] && scores[task] < 0) {
                     hueAngle = 0; // red
@@ -263,7 +261,10 @@
                 for (const actorIdx in actors) {
                     const actor = actors[actorIdx];
                     const id = `${actor}_${task}`;
-                    const div = el(`<div class='box' id="${id}" title='${title}'>${actor}: ${task}</div>`);
+                    const div = el(`<div class='box' id="${id}">${actor}: ${task}</div>`);
+                    if (title)
+                        div.title = title;
+
                     map.append(div)
                 }
             }
@@ -329,7 +330,7 @@
                 // https://drafts.csswg.org/css-color-3/#hsl-color
                 div.style.backgroundColor = `hsl(${hueAngle}, ${scaledCount * 10 * 10 / topCount}%, 75%)`;
 
-                div.innerHTML = `<input value='${counts[id]}' size=2 class='count'>`;
+                div.innerHTML = `<input value='${counts[id]}' size=1 class='count'>`;
                 div.children[0].addEventListener('blur', function (e) {
                     updateCnt(actor, task, parseInt(e.target.value - counts[id]));
                 });

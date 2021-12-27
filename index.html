@@ -277,6 +277,11 @@
                 scores = config.scores;
             if (config.title)
                 document.title = config.title;
+            if (config.favicon) {
+                const favEl = `<link rel="icon" href="${config.favicon}">`;
+                const head = document.getElementsByTagName('head')[0];
+                head.insertAdjacentHTML('beforeend', favEl);
+            }
             if (config.topCount)
                 topCount = config.topCount;
             if (config.period) {

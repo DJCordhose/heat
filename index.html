@@ -286,6 +286,12 @@
                 topCount = config.topCount;
             if (config.period) {
                 switch (config.period) {
+                    case 'minute':
+                        decayPeriod = minuteInMs;
+                        break;
+                    case 'hour':
+                        decayPeriod = hourInMs;
+                        break;
                     case 'day':
                         decayPeriod = dayInMs;
                         break;
@@ -384,7 +390,11 @@
             }
 
             // https://firebase.google.com/docs/firestore/quickstart#read_data
-            const querySnapshot = await getDocs(collection(db, pingsCollection));
+            // const querySnapshot = await getDocs(collection(db, pingsCollection));
+            const cutOffTimestamp = Date.now() - decayPeriod;
+            const q = query(collection(db, pingsCollection), where("timestamp", ">=", cutOffTimestamp));
+            const querySnapshot = await getDocs(q);
+
             querySnapshot.forEach((doc) => {
                 const { actor, task, timestamp, cnt } = doc.data();
                 // console.log(`${doc.id} => ${actor}, ${task}, ${timestamp}`);

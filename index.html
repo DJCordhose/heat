@@ -340,6 +340,17 @@
         }
 
         function updateSummary() {
+            for (const taskIdx in tasks) {
+                const task = tasks[taskIdx];
+                rowCounts[task] = 0;                    
+            }
+
+            Object.entries(counts).forEach(([id, count]) => {
+                const [actor, task] = id.split('_');
+                rowCounts[task] += count;
+            });
+
+
             Object.entries(rowCounts).forEach(([task, scaledCount]) => {
                 let hueAngle = 120; // green
                 if (scores[task] && scores[task] < 0) {
@@ -364,7 +375,6 @@
                     const task = tasks[taskIdx];
                     const id = `${actor}_${task}`;
                     counts[id] = 0;
-                    rowCounts[task] = 0;                    
                 }
             }
 
@@ -375,7 +385,6 @@
                 // console.log(`${doc.id} => ${actor}, ${task}, ${timestamp}`);
                 const id = `${actor}_${task}`;
                 counts[id] += cnt;
-                rowCounts[task] += cnt;
             });
         }
 

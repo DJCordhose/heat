@@ -202,13 +202,8 @@
                 const id = el.id;
                 const [actor, task] = id.split('_');
                 if (task) {
-
-                    let cnt = 1;
-                    if (scores && scores[task]) {
-                        cnt = scores[task]
-                    }
-                    glow(el, cnt < 0 ? 'red' : 'green');
-                    updateCnt(actor, task, cnt);
+                    glow(el, scores[task] < 0 ? 'red' : 'green');
+                    updateCnt(actor, task, 1);
                 }
             });
 
@@ -322,16 +317,15 @@
             Object.entries(scaledCounts).forEach(([id, scaledCount]) => {
                 const [actor, task] = id.split('_');
                 let hueAngle = 120; // green
-                if (scores[task] && scores[task] < 0) {
+                if (scores[task] < 0) {
                     hueAngle = 0; // red
-                    scaledCount *= -1;
                 }
                 const div = document.getElementById(id);
                 // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()
                 // https://drafts.csswg.org/css-color-3/#hsl-color
                 div.style.backgroundColor = `hsl(${hueAngle}, ${scaledCount * 10 * 10 / topCount}%, 75%)`;
 
-                div.innerHTML = `<input value='${counts[id]}' size=2 class='count'>`;
+                div.innerHTML = `<input value='${counts[id]}' size=1 class='count'>`;
                 div.children[0].addEventListener('blur', function (e) {
                     updateCnt(actor, task, parseInt(e.target.value - counts[id]));
                 });
@@ -355,7 +349,6 @@
                 let hueAngle = 120; // green
                 if (scores[task] && scores[task] < 0) {
                     hueAngle = 0; // red
-                    scaledCount *= -1;
                 }
                 scaledCount = Math.ceil(scaledCount / actors.length);
                 const div = document.getElementById(task);
@@ -363,7 +356,7 @@
                 // https://drafts.csswg.org/css-color-3/#hsl-color
                 div.style.backgroundColor = `hsl(${hueAngle}, ${scaledCount * 10 * 10 / topCount}%, 75%)`;
 
-                div.innerHTML = `<input value='${rowCounts[task]}' size=2 class='count' readonly>`;
+                div.innerHTML = `<input value='${rowCounts[task]}' size=1 class='count' readonly>`;
             });
 
         }

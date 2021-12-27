@@ -337,7 +337,7 @@
                 div.style.backgroundColor = `hsl(${hueAngle}, ${scaledCount * 10 * 10 / topCount}%, 75%)`;
 
                 if (isMobile()) {
-                    div.innerHTML = `<span>${counts[id]}</span>`;
+                    div.innerHTML = `${counts[id]}`;
                 } else {
                     div.innerHTML = `<input value='${counts[id]}' size=1 class='count'>`;
                     const inputEl = div.children[0];
@@ -374,7 +374,7 @@
                 // https://drafts.csswg.org/css-color-3/#hsl-color
                 div.style.backgroundColor = `hsl(${hueAngle}, ${scaledCount * 10 * 10 / topCount}%, 75%)`;
 
-                div.innerHTML = `<span>${rowCounts[task]}</span>`;
+                div.innerHTML = `${rowCounts[task]}`;
             });
 
         }

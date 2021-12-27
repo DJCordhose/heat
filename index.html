@@ -6,7 +6,6 @@
         .parent {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
-            grid-template-rows: repeat(4, 1fr);
             grid-column-gap: 10px;
             grid-row-gap: 10px;
             padding: 10px;
@@ -95,6 +94,7 @@
         let topCount = 5;
 
         const counts = {};
+        const rowCounts = {};
 
         const minuteInMs = 1000 * 60;
         const hourInMs = minuteInMs * 60;
@@ -181,22 +181,22 @@
             } catch (e) {
                 console.error("Error adding document: ", e);
             }
-
         }
 
         async function writeConfig(configName, config) {
             try {
                 const docRef = await setDoc(doc(db, configName, "singleton"), config);
-                console.log("Document written with ID: ", docRef.id);
+                console.log("Document written");
             } catch (e) {
-                console.error("Error adding document: ", e);
+                console.error("Error setting document: ", e);
             }
-
         }
         window.writeConfig = writeConfig;
 
         function renderConfig() {
             const map = document.getElementById('map');
+            map.style.gridTemplateColumns = `repeat(${actors.length + 2}, 1fr)`;
+
             map.addEventListener('click', function (e) {
                 const el = e.target;
                 const id = el.id;
@@ -212,6 +212,7 @@
                 }
             });
 
+
             const div = el(`<div class='headercol'></div>`);
             map.append(div);
             for (const actorIdx in actors) {
@@ -219,6 +220,8 @@
                 const div = el(`<div class='headercol'>${actor}</div>`);
                 map.append(div)
             }
+            // map.append(el(`<div class='headercol'>&#8960;</div>`));
+            map.append(el(`<div class='headercol'>&sum;</div>`));
 
             for (const taskIdx in tasks) {
                 const task = tasks[taskIdx];
@@ -244,12 +247,20 @@
                 for (const actorIdx in actors) {
                     const actor = actors[actorIdx];
                     const id = `${actor}_${task}`;
+                    // text content will be overwritten in update
                     const div = el(`<div class='box' id="${id}">${actor}: ${task}</div>`);
                     if (title)
                         div.title = title;
 
                     map.append(div)
                 }
+
+                // text content will be overwritten in update
+                const summaryDiv = el(`<div class='box' id="${task}">${task}</div>`);
+                if (title)
+                    summaryDiv.title = title;
+                map.append(summaryDiv)
+
             }
         }
 
@@ -285,7 +296,7 @@
         }
 
         async function init() {
-            await removeDecayed();
+            // await removeDecayed();
 
             const docRef = doc(db, configCollection, "singleton");
             const docSnap = await getDoc(docRef);
@@ -320,13 +331,35 @@
                     updateCnt(actor, task, parseInt(e.target.value - counts[id]));
                 });
             });
+            updateSummary();
+        }
+
+        function updateSummary() {
+            Object.entries(rowCounts).forEach(([task, scaledCount]) => {
+                let hueAngle = 120; // green
+                if (scores[task] && scores[task] < 0) {
+                    hueAngle = 0; // red
+                    scaledCount *= -1;
+                }
+                scaledCount = Math.ceil(scaledCount / actors.length);
+                const div = document.getElementById(task);
+                // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl()
+                // https://drafts.csswg.org/css-color-3/#hsl-color
+                div.style.backgroundColor = `hsl(${hueAngle}, ${scaledCount * 10 * 10 / topCount}%, 75%)`;
+
+                div.innerHTML = `<input value='${rowCounts[task]}' size=2 class='count' readonly>`;
+            });
+
         }
 
         async function aggregate() {
             for (const taskIdx in tasks) {
                 for (const actorIdx in actors) {
-                    const id = `${actors[actorIdx]}_${tasks[taskIdx]}`;
+                    const actor = actors[actorIdx];
+                    const task = tasks[taskIdx];
+                    const id = `${actor}_${task}`;
                     counts[id] = 0;
+                    rowCounts[task] = 0;                    
                 }
             }
 
@@ -337,6 +370,7 @@
                 // console.log(`${doc.id} => ${actor}, ${task}, ${timestamp}`);
                 const id = `${actor}_${task}`;
                 counts[id] += cnt;
+                rowCounts[task] += cnt;
             });
         }
 

@@ -339,7 +339,7 @@
                 if (isMobile()) {
                     div.innerHTML = `${counts[id]}`;
                 } else {
-                    div.innerHTML = `<input value='${counts[id]}' size=1 class='count'>`;
+                    div.innerHTML = `<input value='${counts[id]}' size=1 class='count' type="number" min="0" max="99" style="width: 4em;">`;
                     const inputEl = div.children[0];
                     inputEl.addEventListener('blur', function (e) {
                         updateCnt(actor, task, parseInt(e.target.value - counts[id]));
